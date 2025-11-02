@@ -1,72 +1,57 @@
 // index.js
 const mineflayer = require('mineflayer')
-const express = require('express')
+const { Vec3 } = require('vec3')
 
-const app = express()
-const PORT = process.env.PORT || 10000
-
-// Serve a simple endpoint so Render knows the service is live
-app.get('/', (req, res) => {
-  res.send('AFK Bot is running!')
-})
-
-app.listen(PORT, () => {
-  console.log(`Express server listening on port ${PORT}`)
-})
-
-// ---- BOT CONFIGURATION ----
-const BOT_CONFIG = {
-  host: 'chronosblade.aternos.me', // your server IP
-  port: 50847,                      // your server port
-  username: 'AFKBot',               // bot username
-  version: '1.21.10'                // Minecraft version
+const BOT_OPTIONS = {
+  host: 'chronosblade.aternos.me',  // Your server IP
+  port: 50847,                       // Server port
+  username: 'AFKBot',                // Bot username
+  version: '1.21.10',                // Server Minecraft version
 }
 
-// Function to create bot
+let bot
+
 function createBot() {
-  const bot = mineflayer.createBot(BOT_CONFIG)
+  bot = mineflayer.createBot(BOT_OPTIONS)
 
-  bot.once('spawn', () => {
-    console.log('Bot has spawned in the world!')
+  bot.on('spawn', () => {
+    console.log('Bot spawned! Starting infinite AFK loop.')
 
-    let angle = 0
+    // Make sure the bot keeps running
+    bot.setControlState('forward', true)
+    bot.setControlState('sprint', true)
 
-    // Loop to make the bot walk in a circle
+    // Randomized movement & jumping
     setInterval(() => {
-      if (!bot.entity) return
+      // Randomly strafe left/right
+      const strafe = Math.random() > 0.5
+      bot.setControlState('left', strafe)
+      bot.setControlState('right', !strafe)
 
-      const radius = 3 // circle radius in blocks
+      // Random jump every tick sometimes
+      bot.setControlState('jump', Math.random() < 0.3)
 
-      // Calculate direction vector for circular movement
-      const dx = Math.cos(angle)
-      const dz = Math.sin(angle)
+      // Rotate randomly
+      const yawChange = (Math.random() - 0.5) * 0.2
+      const pitchChange = (Math.random() - 0.5) * 0.1
+      bot.look(bot.entity.yaw + yawChange, bot.entity.pitch + pitchChange, true)
+    }, 500) // every half second
 
-      // Make bot move forward and rotate slightly
-      bot.look(bot.entity.position.x + dx, bot.entity.position.y, bot.entity.position.z + dz, true)
-      bot.setControlState('forward', true)
-      bot.setControlState('sprint', true)
-      bot.setControlState('jump', true)
-
-      // Increment angle for circular movement
-      angle += 0.05
-      if (angle > 2 * Math.PI) angle = 0
-    }, 100) // update every 100ms
+    // Switch inventory slots randomly
+    setInterval(() => {
+      const slot = Math.floor(Math.random() * 9)
+      bot.setQuickBarSlot(slot)
+    }, 2000) // every 2 seconds
   })
 
-  // Log errors
-  bot.on('error', err => console.log('Bot Error:', err))
-
-  // Handle disconnection and auto-reconnect
   bot.on('end', () => {
-    console.log('Bot disconnected. Reconnecting in 10 seconds...')
-    setTimeout(() => createBot(), 10000)
+    console.log('Bot disconnected. Reconnecting in 10s...')
+    setTimeout(createBot, 10000) // reconnect after 10 sec
   })
 
-  // Optional: log mobs/entities spawning
-  bot.on('entitySpawn', entity => {
-    console.log(`Entity spawned: ${entity.displayName || entity.username || entity.type}`)
+  bot.on('error', (err) => {
+    console.log('Bot Error:', err)
   })
 }
 
-// Start the bot for the first time
 createBot()
