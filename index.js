@@ -2,24 +2,27 @@ const mineflayer = require('mineflayer')
 
 function startBot() {
   const bot = mineflayer.createBot({
-    host: "YOUR-ATERNOS-IP",
-    port: 25565,
-    username: "awesomedude33",
+    host: "YOUR-ATERNOS-IP",   // change to your server IP
+    port: 25565,               // Aternos port (default 25565)
+    username: "awesomedude33", // bot username
     version: "auto"
   })
 
   bot.on('spawn', () => {
-    console.log("bot joined!")
+    console.log("Bot joined the server!")
 
-    setInterval(() => {
-      // walk forward forever
-      bot.setControlState('forward', true)
-    }, 1000)
+    // walk forward forever
+    bot.setControlState('forward', true)
   })
 
-  bot.on('end', () => {
-    console.log("bot kicked — reconnecting…")
-    setTimeout(startBot, 5000)
+  bot.on('end', (reason) => {
+    console.log(`Bot disconnected: ${reason}`)
+    console.log("Reconnecting in 5 seconds...")
+    setTimeout(startBot, 5000) // reconnect after 5 seconds
+  })
+
+  bot.on('error', (err) => {
+    console.log(`Bot error: ${err}`)
   })
 }
 
