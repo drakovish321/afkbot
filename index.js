@@ -19,7 +19,7 @@ app.listen(PORT, () => {
 
 // ---- MINEFLAYER BOT CONFIG ----
 const bot = mineflayer.createBot({
-  host: 'YOUR_SERVER_IP',      // Replace with your server IP
+  host: 'chronosblade.aternos.me',      // Replace with your server IP
   port: 50847,                 // Replace with your server port
   username: 'AFKBot',          // Replace with your bot username
   version: '1.21.10'           // Force correct Minecraft version
