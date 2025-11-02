@@ -3,10 +3,10 @@ const mineflayer = require('mineflayer')
 const { Vec3 } = require('vec3')
 
 const BOT_OPTIONS = {
-  host: 'chronosblade.aternos.me',  // Your server IP
+  host: 'chronosblade.aternos.me',  // Server IP
   port: 50847,                       // Server port
   username: 'AFKBot',                // Bot username
-  version: '1.21.10',                // Server Minecraft version
+  version: '1.21.10',                // Minecraft version
 }
 
 let bot
@@ -15,42 +15,59 @@ function createBot() {
   bot = mineflayer.createBot(BOT_OPTIONS)
 
   bot.on('spawn', () => {
-    console.log('Bot spawned! Starting infinite AFK loop.')
+    console.log('Bot spawned! Starting survival AFK loop.')
 
-    // Make sure the bot keeps running
+    // Start moving forward & sprinting
     bot.setControlState('forward', true)
     bot.setControlState('sprint', true)
 
-    // Randomized movement & jumping
-    setInterval(() => {
+    // Random movement & human-like behavior
+    const movementLoop = setInterval(() => {
       // Randomly strafe left/right
-      const strafe = Math.random() > 0.5
-      bot.setControlState('left', strafe)
-      bot.setControlState('right', !strafe)
+      const strafeLeft = Math.random() < 0.5
+      bot.setControlState('left', strafeLeft)
+      bot.setControlState('right', !strafeLeft)
 
-      // Random jump every tick sometimes
-      bot.setControlState('jump', Math.random() < 0.3)
-
-      // Rotate randomly
+      // Small random rotation
       const yawChange = (Math.random() - 0.5) * 0.2
       const pitchChange = (Math.random() - 0.5) * 0.1
       bot.look(bot.entity.yaw + yawChange, bot.entity.pitch + pitchChange, true)
-    }, 500) // every half second
 
-    // Switch inventory slots randomly
-    setInterval(() => {
+      // Jump occasionally
+      bot.setControlState('jump', Math.random() < 0.25)
+
+      // Dodge mobs if nearby
+      const hostiles = Object.values(bot.entities).filter(e =>
+        e.type === 'mob' &&
+        e.position.distanceTo(bot.entity.position) < 4 &&
+        ['Zombie', 'Skeleton', 'Spider', 'Creeper', 'Slime'].includes(e.name)
+      )
+      if (hostiles.length > 0) {
+        bot.setControlState('back', true)
+        bot.setControlState('forward', false)
+      } else {
+        bot.setControlState('back', false)
+        bot.setControlState('forward', true)
+      }
+    }, 500) // every 0.5s
+
+    // Randomly switch inventory slots
+    const inventoryLoop = setInterval(() => {
       const slot = Math.floor(Math.random() * 9)
       bot.setQuickBarSlot(slot)
     }, 2000) // every 2 seconds
-  })
 
-  bot.on('end', () => {
-    console.log('Bot disconnected. Reconnecting in 10s...')
-    setTimeout(createBot, 10000) // reconnect after 10 sec
-  })
+    // Cleanup on disconnect
+    bot.on('end', () => {
+      console.log('Bot disconnected. Clearing intervals and reconnecting in 10s...')
+      clearInterval(movementLoop)
+      clearInterval(inventoryLoop)
+      setTimeout(createBot, 10000)
+    })
 
-  bot.on('error', (err) => {
-    console.log('Bot Error:', err)
+    bot.on('error', (err) => {
+      console.log('Bot Error:', err)
+    })
   })
 }
 
