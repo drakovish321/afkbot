@@ -1,46 +1,58 @@
-const mineflayer = require('mineflayer')
-const mcData = require('minecraft-data')('1.21.10')
-const { pathfinder, Movements } = require('mineflayer-pathfinder')
-const express = require('express')
+// index.js
+const mineflayer = require('mineflayer');
+const { pathfinder, Movements, goals } = require('mineflayer-pathfinder');
+const mcData = require('minecraft-data')('1.21.10'); // match your server version
+const express = require('express');
 
-// ---- Web server for uptime ----
-const app = express()
-const PORT = process.env.PORT || 3000
-app.get('/', (req, res) => res.send('AFK Bot running!'))
-app.listen(PORT, () => console.log(`Web server listening on port ${PORT}`))
+// ----- Express Web Server for Render -----
+const app = express();
+const PORT = process.env.PORT || 3000;
 
-// ---- Bot creation ----
-function createBot() {
-  const bot = mineflayer.createBot({
-    host: 'YOUR_SERVER_IP', // Replace with your server IP
-    port: 50847,
-    username: 'AFKBot123',
-    version: '1.21.10'
-  })
+app.get('/', (req, res) => {
+  res.send('AFK Bot is running!');
+});
 
-  bot.loadPlugin(pathfinder)
+app.listen(PORT, () => {
+  console.log(`Express server listening on port ${PORT}`);
+});
 
-  bot.once('spawn', () => {
-    console.log('Bot spawned!')
+// ----- Mineflayer Bot Setup -----
+const bot = mineflayer.createBot({
+  host: 'chronosblade.aternos.me',  // change this to your server IP
+  port: 50847,             // your correct port
+  username: 'AFKBot',
+  version: '1.21.10'       // make sure this matches your server
+});
 
-    const movements = new Movements(bot, mcData)
-    bot.pathfinder.setMovements(movements)
+// Load pathfinder plugin
+bot.loadPlugin(pathfinder);
 
-    // Move forward and sprint indefinitely
-    setInterval(() => {
-      if (bot.entity) {
-        bot.setControlState('forward', true)
-        bot.setControlState('sprint', true)
-      }
-    }, 1000)
-  })
+// On spawn
+bot.once('spawn', () => {
+  console.log('Bot has spawned in the world!');
 
-  bot.on('end', () => {
-    console.log('Bot disconnected, reconnecting in 5s...')
-    setTimeout(createBot, 5000)
-  })
+  // Setup pathfinder movements
+  const defaultMove = new Movements(bot, mcData);
+  defaultMove.blocksCantBreak.add(mcData.blocksByName.chest?.id || 54); // safe fallback for chest id
+  bot.pathfinder.setMovements(defaultMove);
 
-  bot.on('error', err => console.log('Bot error:', err))
-}
+  // Example: move to coordinates (0, 64, 0)
+  const goal = new goals.GoalBlock(0, 64, 0);
+  bot.pathfinder.setGoal(goal);
+});
 
-createBot()
+// Error handling
+bot.on('error', (err) => console.log('Bot error:', err));
+bot.on('end', () => console.log('Bot disconnected, trying to reconnect in 5s...'));
+
+// Optional: Reconnect loop
+bot.on('kick', (reason) => {
+  console.log('Kicked:', reason);
+  setTimeout(() => {
+    bot.connect();
+  }, 5000);
+});
+
+bot.on('death', () => {
+  console.log('Bot died, respawning...');
+});
