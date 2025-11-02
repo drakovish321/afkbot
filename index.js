@@ -1,74 +1,48 @@
-// index.js
-const mineflayer = require('mineflayer')
-const { Vec3 } = require('vec3')
-
-const BOT_OPTIONS = {
-  host: 'chronosblade.aternos.me',  // Server IP
-  port: 50847,                       // Server port
-  username: 'AFKBot',                // Bot username
-  version: '1.21.10',                // Minecraft version
-}
-
-let bot
+const mineflayer = require('mineflayer');
 
 function createBot() {
-  bot = mineflayer.createBot(BOT_OPTIONS)
+  const bot = mineflayer.createBot({
+    host: 'chronosblade.aternos.me',   // replace with your server IP
+    port: 50847,               // replace if your server uses a different port
+    username: 'AFKBot'         // your bot account
+  });
 
   bot.on('spawn', () => {
-    console.log('Bot spawned! Starting survival AFK loop.')
+    console.log('Bot spawned and ready!');
+    startAfkActions(bot);
+  });
 
-    // Start moving forward & sprinting
-    bot.setControlState('forward', true)
-    bot.setControlState('sprint', true)
+  // Reconnect safely after 10 seconds if disconnected
+  bot.on('end', () => {
+    console.log('Bot disconnected. Reconnecting in 10 seconds...');
+    setTimeout(createBot, 10000); // 10000 ms = 10 sec
+  });
 
-    // Random movement & human-like behavior
-    const movementLoop = setInterval(() => {
-      // Randomly strafe left/right
-      const strafeLeft = Math.random() < 0.5
-      bot.setControlState('left', strafeLeft)
-      bot.setControlState('right', !strafeLeft)
-
-      // Small random rotation
-      const yawChange = (Math.random() - 0.5) * 0.2
-      const pitchChange = (Math.random() - 0.5) * 0.1
-      bot.look(bot.entity.yaw + yawChange, bot.entity.pitch + pitchChange, true)
-
-      // Jump occasionally
-      bot.setControlState('jump', Math.random() < 0.25)
-
-      // Dodge mobs if nearby
-      const hostiles = Object.values(bot.entities).filter(e =>
-        e.type === 'mob' &&
-        e.position.distanceTo(bot.entity.position) < 4 &&
-        ['Zombie', 'Skeleton', 'Spider', 'Creeper', 'Slime'].includes(e.name)
-      )
-      if (hostiles.length > 0) {
-        bot.setControlState('back', true)
-        bot.setControlState('forward', false)
-      } else {
-        bot.setControlState('back', false)
-        bot.setControlState('forward', true)
-      }
-    }, 500) // every 0.5s
-
-    // Randomly switch inventory slots
-    const inventoryLoop = setInterval(() => {
-      const slot = Math.floor(Math.random() * 9)
-      bot.setQuickBarSlot(slot)
-    }, 2000) // every 2 seconds
-
-    // Cleanup on disconnect
-    bot.on('end', () => {
-      console.log('Bot disconnected. Clearing intervals and reconnecting in 10s...')
-      clearInterval(movementLoop)
-      clearInterval(inventoryLoop)
-      setTimeout(createBot, 10000)
-    })
-
-    bot.on('error', (err) => {
-      console.log('Bot Error:', err)
-    })
-  })
+  bot.on('error', (err) => {
+    console.log('Bot error:', err);
+  });
 }
 
-createBot()
+// Example AFK actions: run, jump, switch inventory slots
+function startAfkActions(bot) {
+  if (!bot.entity) return;
+
+  const inventorySlots = [0,1,2,3,4]; // example slots to switch
+  let slotIndex = 0;
+
+  setInterval(() => {
+    // Walk in a random direction
+    const dx = Math.random() - 0.5;
+    const dz = Math.random() - 0.5;
+    bot.setControlState('forward', true);
+    bot.setControlState('jump', Math.random() < 0.2); // random jumps
+    bot.look(bot.entity.position.x + dx, bot.entity.position.y, bot.entity.position.z + dz, true);
+
+    // Switch inventory slot
+    bot.setQuickBarSlot(inventorySlots[slotIndex]);
+    slotIndex = (slotIndex + 1) % inventorySlots.length;
+
+  }, 2000); // every 2 seconds
+}
+
+createBot();
