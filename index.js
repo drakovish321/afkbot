@@ -1,8 +1,5 @@
 // index.js
-
 const mineflayer = require('mineflayer')
-const { pathfinder, Movements, goals } = require('mineflayer-pathfinder')
-const mcData = require('minecraft-data')('1.21.10') // Force correct server version
 const express = require('express')
 
 const app = express()
@@ -19,42 +16,37 @@ app.listen(PORT, () => {
 
 // ---- MINEFLAYER BOT CONFIG ----
 const bot = mineflayer.createBot({
-  host: 'chronosblade.aternos.me',      // Replace with your server IP
-  port: 50847,                 // Replace with your server port
-  username: 'AFKBot',          // Replace with your bot username
-  version: '1.21.10'           // Force correct Minecraft version
+  host: 'chronosblade.aternos.me', // your server IP
+  port: 50847,                      // your server port
+  username: 'AFKBot',               // bot username
+  version: '1.21.10'                // Minecraft version
 })
 
-// Load the pathfinder plugin
-bot.loadPlugin(pathfinder)
-
+// When the bot spawns
 bot.once('spawn', () => {
   console.log('Bot has spawned in the world!')
 
-  // Initialize movements
-  const defaultMove = new Movements(bot, mcData)
-  bot.pathfinder.setMovements(defaultMove)
-
-  // Example: Walk to the nearest chest
-  const chestBlock = bot.findBlock({
-    matching: mcData.blocksByName.chest.id,
-    maxDistance: 32
-  })
-
-  if (chestBlock) {
-    const goal = new goals.GoalBlock(chestBlock.position.x, chestBlock.position.y, chestBlock.position.z)
-    bot.pathfinder.setGoal(goal)
-    console.log('Moving to nearest chest...')
-  } else {
-    console.log('No chest found nearby.')
+  // Continuously sprint forward
+  function sprintForward() {
+    bot.setControlState('forward', true)
+    bot.setControlState('sprint', true)
+    bot.setControlState('jump', false)
   }
+
+  sprintForward()
+
+  // Optional: periodically ensure it’s still moving
+  setInterval(() => {
+    if (!bot.entity) return
+    sprintForward()
+  }, 5000)
 })
 
 // Log errors
 bot.on('error', err => console.log('Bot Error:', err))
 bot.on('end', () => console.log('Bot disconnected from server.'))
 
-// Optional: log mob spawns using the new displayName property
+// Optional: log mobs/entities spawning
 bot.on('entitySpawn', entity => {
-  console.log(`Entity spawned: ${entity.displayName}`)
+  console.log(`Entity spawned: ${entity.displayName || entity.username || entity.type}`)
 })
