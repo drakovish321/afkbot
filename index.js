@@ -26,20 +26,28 @@ const bot = mineflayer.createBot({
 bot.once('spawn', () => {
   console.log('Bot has spawned in the world!')
 
-  // Continuously sprint forward
-  function sprintForward() {
-    bot.setControlState('forward', true)
-    bot.setControlState('sprint', true)
-    bot.setControlState('jump', false)
-  }
+  let angle = 0
 
-  sprintForward()
-
-  // Optional: periodically ensure it’s still moving
+  // Loop to make the bot walk in a circle
   setInterval(() => {
     if (!bot.entity) return
-    sprintForward()
-  }, 5000)
+
+    const radius = 3 // circle radius in blocks
+
+    // Calculate direction vector for circular movement
+    const dx = Math.cos(angle)
+    const dz = Math.sin(angle)
+
+    // Make bot move forward and rotate slightly
+    bot.look(bot.entity.position.x + dx, bot.entity.position.y, bot.entity.position.z + dz, true)
+    bot.setControlState('forward', true)
+    bot.setControlState('sprint', true)
+    bot.setControlState('jump', true)
+
+    // Increment angle for circular movement
+    angle += 0.05
+    if (angle > 2 * Math.PI) angle = 0
+  }, 100) // update every 100ms
 })
 
 // Log errors
