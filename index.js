@@ -24,32 +24,37 @@ function startBot() {
 
   bot.loadPlugin(pathfinder)
 
-  bot.on('spawn', () => {
-    console.log("Bot joined the server!")
+  // Wait for the bot to fully spawn
+  bot.once('spawn', () => {
+    console.log("Bot fully spawned!")
 
-    // Movement settings
-    const defaultMove = new Movements(bot)
-    bot.pathfinder.setMovements(defaultMove)
+    // Wait a couple of seconds for chunks to load
+    setTimeout(() => {
+      console.log("Chunks loaded, starting movement")
 
-    // Move forward in a straight line
-    const initialPos = bot.entity.position.clone()
+      // Movement settings
+      const defaultMove = new Movements(bot)
+      bot.pathfinder.setMovements(defaultMove)
 
-    function walkForward() {
-      const targetX = initialPos.x + 1000
-      const goal = new goals.GoalBlock(Math.floor(targetX), Math.floor(initialPos.y), Math.floor(initialPos.z))
-      bot.pathfinder.setGoal(goal)
-      bot.setControlState('sprint', true)
-    }
+      const initialPos = bot.entity.position.clone()
 
-    walkForward()
+      function walkForward() {
+        const targetX = initialPos.x + 1000
+        const goal = new goals.GoalBlock(Math.floor(targetX), Math.floor(initialPos.y), Math.floor(initialPos.z))
+        bot.pathfinder.setGoal(goal)
+        bot.setControlState('sprint', true)
+      }
 
-    // Auto-jump
-    bot.on('physicTick', () => bot.setControlState('jump', true))
+      walkForward()
 
-    // Random head movement
-    setInterval(() => {
-      bot.look(bot.entity.yaw + (Math.random() - 0.5), bot.entity.pitch, true)
-    }, 2000)
+      // Auto-jump
+      bot.on('physicTick', () => bot.setControlState('jump', true))
+
+      // Random head movement
+      setInterval(() => {
+        bot.look(bot.entity.yaw + (Math.random() - 0.5), bot.entity.pitch, true)
+      }, 2000)
+    }, 2000) // 2-second delay to let chunks load
   })
 
   // Auto-reconnect
