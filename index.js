@@ -14,47 +14,59 @@ app.listen(PORT, () => {
   console.log(`Express server listening on port ${PORT}`)
 })
 
-// ---- MINEFLAYER BOT CONFIG ----
-const bot = mineflayer.createBot({
+// ---- BOT CONFIGURATION ----
+const BOT_CONFIG = {
   host: 'chronosblade.aternos.me', // your server IP
   port: 50847,                      // your server port
   username: 'AFKBot',               // bot username
   version: '1.21.10'                // Minecraft version
-})
+}
 
-// When the bot spawns
-bot.once('spawn', () => {
-  console.log('Bot has spawned in the world!')
+// Function to create bot
+function createBot() {
+  const bot = mineflayer.createBot(BOT_CONFIG)
 
-  let angle = 0
+  bot.once('spawn', () => {
+    console.log('Bot has spawned in the world!')
 
-  // Loop to make the bot walk in a circle
-  setInterval(() => {
-    if (!bot.entity) return
+    let angle = 0
 
-    const radius = 3 // circle radius in blocks
+    // Loop to make the bot walk in a circle
+    setInterval(() => {
+      if (!bot.entity) return
 
-    // Calculate direction vector for circular movement
-    const dx = Math.cos(angle)
-    const dz = Math.sin(angle)
+      const radius = 3 // circle radius in blocks
 
-    // Make bot move forward and rotate slightly
-    bot.look(bot.entity.position.x + dx, bot.entity.position.y, bot.entity.position.z + dz, true)
-    bot.setControlState('forward', true)
-    bot.setControlState('sprint', true)
-    bot.setControlState('jump', true)
+      // Calculate direction vector for circular movement
+      const dx = Math.cos(angle)
+      const dz = Math.sin(angle)
 
-    // Increment angle for circular movement
-    angle += 0.05
-    if (angle > 2 * Math.PI) angle = 0
-  }, 100) // update every 100ms
-})
+      // Make bot move forward and rotate slightly
+      bot.look(bot.entity.position.x + dx, bot.entity.position.y, bot.entity.position.z + dz, true)
+      bot.setControlState('forward', true)
+      bot.setControlState('sprint', true)
+      bot.setControlState('jump', true)
 
-// Log errors
-bot.on('error', err => console.log('Bot Error:', err))
-bot.on('end', () => console.log('Bot disconnected from server.'))
+      // Increment angle for circular movement
+      angle += 0.05
+      if (angle > 2 * Math.PI) angle = 0
+    }, 100) // update every 100ms
+  })
 
-// Optional: log mobs/entities spawning
-bot.on('entitySpawn', entity => {
-  console.log(`Entity spawned: ${entity.displayName || entity.username || entity.type}`)
-})
+  // Log errors
+  bot.on('error', err => console.log('Bot Error:', err))
+
+  // Handle disconnection and auto-reconnect
+  bot.on('end', () => {
+    console.log('Bot disconnected. Reconnecting in 10 seconds...')
+    setTimeout(() => createBot(), 10000)
+  })
+
+  // Optional: log mobs/entities spawning
+  bot.on('entitySpawn', entity => {
+    console.log(`Entity spawned: ${entity.displayName || entity.username || entity.type}`)
+  })
+}
+
+// Start the bot for the first time
+createBot()
