@@ -5,7 +5,7 @@ function startBot() {
     host: "chronosblade.aternos.me",   // change to your server IP
     port: 50847,               // Aternos port (default 25565)
     username: "awesomedude33", // bot username
-    version: "auto"
+    version: "1.12.2"
   })
 
   bot.on('spawn', () => {
