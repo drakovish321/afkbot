@@ -2,8 +2,8 @@ const mineflayer = require('mineflayer')
 
 function startBot() {
   const bot = mineflayer.createBot({
-    host: "YOUR-ATERNOS-IP",   // change to your server IP
-    port: 25565,               // Aternos port (default 25565)
+    host: "chronosblade.aternos.me",   // change to your server IP
+    port: 50847,               // Aternos port (default 25565)
     username: "awesomedude33", // bot username
     version: "auto"
   })
