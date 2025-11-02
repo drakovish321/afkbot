@@ -1,61 +1,46 @@
-// index.js
 const mineflayer = require('mineflayer')
 const mcData = require('minecraft-data')('1.21.10')
 const { pathfinder, Movements } = require('mineflayer-pathfinder')
 const express = require('express')
 
-// ---- Web server for Render uptime ----
+// ---- Web server for uptime ----
 const app = express()
 const PORT = process.env.PORT || 3000
+app.get('/', (req, res) => res.send('AFK Bot running!'))
+app.listen(PORT, () => console.log(`Web server listening on port ${PORT}`))
 
-app.get('/', (req, res) => {
-  res.send('AFK Bot is running!')
-})
-
-app.listen(PORT, () => {
-  console.log(`Web server is listening on port ${PORT}`)
-})
-
-// ---- Bot creation function ----
+// ---- Bot creation ----
 function createBot() {
   const bot = mineflayer.createBot({
     host: 'YOUR_SERVER_IP', // Replace with your server IP
-    port: 25565,            // Replace with your server port if not default
-    username: 'awesomedude33',
+    port: 50847,
+    username: 'AFKBot123',
     version: '1.21.10'
   })
 
-  // Load pathfinder plugin
   bot.loadPlugin(pathfinder)
 
   bot.once('spawn', () => {
-    console.log('Bot spawned successfully!')
+    console.log('Bot spawned!')
 
-    const defaultMove = new Movements(bot, mcData)
-    bot.pathfinder.setMovements(defaultMove)
+    const movements = new Movements(bot, mcData)
+    bot.pathfinder.setMovements(movements)
 
-    // Walk forward indefinitely and sprint
+    // Move forward and sprint indefinitely
     setInterval(() => {
-      bot.setControlState('forward', true)
-      bot.setControlState('sprint', true)
+      if (bot.entity) {
+        bot.setControlState('forward', true)
+        bot.setControlState('sprint', true)
+      }
     }, 1000)
   })
 
-  // Auto-reconnect
   bot.on('end', () => {
-    console.log('Bot disconnected, reconnecting in 5 seconds...')
+    console.log('Bot disconnected, reconnecting in 5s...')
     setTimeout(createBot, 5000)
   })
 
-  bot.on('error', (err) => {
-    console.log('Bot error:', err)
-  })
-
-  // Optional: log death messages
-  bot.on('death', () => {
-    console.log('Bot died, respawning...')
-  })
+  bot.on('error', err => console.log('Bot error:', err))
 }
 
-// Start the bot
 createBot()
