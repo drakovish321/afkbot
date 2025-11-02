@@ -1,69 +1,61 @@
+// index.js
 const mineflayer = require('mineflayer')
-const { pathfinder, Movements, goals } = require('mineflayer-pathfinder')
-const http = require('http')
+const mcData = require('minecraft-data')('1.21.10')
+const { pathfinder, Movements } = require('mineflayer-pathfinder')
+const express = require('express')
 
-// -----------------------
-// Minimal HTTP server to keep the service alive
-// -----------------------
+// ---- Web server for Render uptime ----
+const app = express()
 const PORT = process.env.PORT || 3000
-http.createServer((req, res) => {
-  res.writeHead(200, {'Content-Type': 'text/plain'})
-  res.end('AFK bot is running!\n')
-}).listen(PORT, () => console.log(`HTTP server listening on port ${PORT}`))
 
-// -----------------------
-// Mineflayer bot
-// -----------------------
-function startBot() {
+app.get('/', (req, res) => {
+  res.send('AFK Bot is running!')
+})
+
+app.listen(PORT, () => {
+  console.log(`Web server is listening on port ${PORT}`)
+})
+
+// ---- Bot creation function ----
+function createBot() {
   const bot = mineflayer.createBot({
-    host: "chronosblade.aternos.me",
-    port: 25565,
-    username: "awesomedude33",
-    version: "1.12.2"
+    host: 'YOUR_SERVER_IP', // Replace with your server IP
+    port: 25565,            // Replace with your server port if not default
+    username: 'awesomedude33',
+    version: '1.21.10'
   })
 
+  // Load pathfinder plugin
   bot.loadPlugin(pathfinder)
 
-  // Wait for the bot to fully spawn
   bot.once('spawn', () => {
-    console.log("Bot fully spawned!")
+    console.log('Bot spawned successfully!')
 
-    // Wait a couple of seconds for chunks to load
-    setTimeout(() => {
-      console.log("Chunks loaded, starting movement")
+    const defaultMove = new Movements(bot, mcData)
+    bot.pathfinder.setMovements(defaultMove)
 
-      // Movement settings
-      const defaultMove = new Movements(bot)
-      bot.pathfinder.setMovements(defaultMove)
-
-      const initialPos = bot.entity.position.clone()
-
-      function walkForward() {
-        const targetX = initialPos.x + 1000
-        const goal = new goals.GoalBlock(Math.floor(targetX), Math.floor(initialPos.y), Math.floor(initialPos.z))
-        bot.pathfinder.setGoal(goal)
-        bot.setControlState('sprint', true)
-      }
-
-      walkForward()
-
-      // Auto-jump
-      bot.on('physicTick', () => bot.setControlState('jump', true))
-
-      // Random head movement
-      setInterval(() => {
-        bot.look(bot.entity.yaw + (Math.random() - 0.5), bot.entity.pitch, true)
-      }, 2000)
-    }, 2000) // 2-second delay to let chunks load
+    // Walk forward indefinitely and sprint
+    setInterval(() => {
+      bot.setControlState('forward', true)
+      bot.setControlState('sprint', true)
+    }, 1000)
   })
 
   // Auto-reconnect
-  bot.on('end', reason => {
-    console.log(`Bot disconnected: ${reason}. Reconnecting in 5 seconds...`)
-    setTimeout(startBot, 5000)
+  bot.on('end', () => {
+    console.log('Bot disconnected, reconnecting in 5 seconds...')
+    setTimeout(createBot, 5000)
   })
 
-  bot.on('error', err => console.log(`Bot error: ${err}`))
+  bot.on('error', (err) => {
+    console.log('Bot error:', err)
+  })
+
+  // Optional: log death messages
+  bot.on('death', () => {
+    console.log('Bot died, respawning...')
+  })
 }
 
-startBot()
+// Start the bot
+createBot()
