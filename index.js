@@ -1,9 +1,9 @@
 const mineflayer = require('mineflayer');
 const Vec3 = require('vec3');
 
-const BOT_USERNAME = 'AFKBot';
-const SERVER_HOST = 'your.server.ip'; // Replace with your server IP
-const SERVER_PORT = 25565; // Replace with your server port
+const BOT_USERNAME = 'chronosbladebot';
+const SERVER_HOST = 'chronosblade.aternos.me'; // Replace with your server IP
+const SERVER_PORT = 50847; // Replace with your server port
 
 function createBot() {
   const bot = mineflayer.createBot({
