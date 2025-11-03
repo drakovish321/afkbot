@@ -1,48 +1,74 @@
 const mineflayer = require('mineflayer');
+const Vec3 = require('vec3');
+
+const BOT_USERNAME = 'AFKBot';
+const SERVER_HOST = 'your.server.ip'; // Replace with your server IP
+const SERVER_PORT = 25565; // Replace with your server port
 
 function createBot() {
   const bot = mineflayer.createBot({
-    host: 'chronosblade.aternos.me',   // replace with your server IP
-    port: 50847,               // replace if your server uses a different port
-    username: 'AFKBot'         // your bot account
+    host: SERVER_HOST,
+    port: SERVER_PORT,
+    username: BOT_USERNAME
   });
 
-  bot.on('spawn', () => {
-    console.log('Bot spawned and ready!');
-    startAfkActions(bot);
+  bot.on('login', () => {
+    console.log('Bot logged in!');
   });
 
-  // Reconnect safely after 10 seconds if disconnected
   bot.on('end', () => {
     console.log('Bot disconnected. Reconnecting in 10 seconds...');
-    setTimeout(createBot, 10000); // 10000 ms = 10 sec
+    setTimeout(createBot, 10000); // reconnect after 10 sec
   });
 
-  bot.on('error', (err) => {
-    console.log('Bot error:', err);
+  bot.on('error', err => {
+    console.error('Bot error:', err);
+  });
+
+  bot.on('spawn', async () => {
+    console.log('Bot spawned, starting loop...');
+    await startLoop(bot);
   });
 }
 
-// Example AFK actions: run, jump, switch inventory slots
-function startAfkActions(bot) {
-  if (!bot.entity) return;
+// Function to make the bot do the mine/place loop
+async function startLoop(bot) {
+  const distance = 50; // blocks to move forward
 
-  const inventorySlots = [0,1,2,3,4]; // example slots to switch
-  let slotIndex = 0;
+  while (true) {
+    try {
+      // Sprint forward
+      bot.setControlState('sprint', true);
+      bot.setControlState('forward', true);
+      await sleep(50 * 250); // approx 50 blocks, assuming ~0.25s per block
+      bot.setControlState('forward', false);
+      bot.setControlState('sprint', false);
 
-  setInterval(() => {
-    // Walk in a random direction
-    const dx = Math.random() - 0.5;
-    const dz = Math.random() - 0.5;
-    bot.setControlState('forward', true);
-    bot.setControlState('jump', Math.random() < 0.2); // random jumps
-    bot.look(bot.entity.position.x + dx, bot.entity.position.y, bot.entity.position.z + dz, true);
+      // Mine the block in front
+      const blockInFront = bot.blockAt(bot.entity.position.offset(0, -1, 1)); // block in front at foot level
+      if (blockInFront) {
+        await bot.dig(blockInFront);
+        console.log('Mined a block');
+      }
 
-    // Switch inventory slot
-    bot.setQuickBarSlot(inventorySlots[slotIndex]);
-    slotIndex = (slotIndex + 1) % inventorySlots.length;
+      // Place the block back
+      const dirtSlot = bot.inventory.items().find(item => item.name.includes('dirt'));
+      if (dirtSlot) {
+        bot.equip(dirtSlot, 'hand');
+        await bot.placeBlock(blockInFront, new Vec3(0, 1, 0)); // place on top
+        console.log('Placed the block back');
+      }
 
-  }, 2000); // every 2 seconds
+      await sleep(1000); // wait 1 sec before next iteration
+    } catch (err) {
+      console.error('Loop error:', err);
+      await sleep(2000); // wait 2 sec and try again
+    }
+  }
+}
+
+function sleep(ms) {
+  return new Promise(resolve => setTimeout(resolve, ms));
 }
 
 createBot();
