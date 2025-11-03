@@ -1,7 +1,7 @@
 const mineflayer = require('mineflayer')
 
 const username = 'AFKBot' // Bot username
-const host = 'chronosblade.aternos.me' // Your server
+const host = 'chronosblade.aternos.me:50847' // Your server
 const port = 50847 // Server port
 const version = '1.21.10' // Minecraft version
 
