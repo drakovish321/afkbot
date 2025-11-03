@@ -4,7 +4,7 @@ const mineflayer = require('mineflayer');
 // Configuration
 const config = {
   host: 'chronosblade.aternos.me',      // e.g., 'play.example.com'
-  port: 80847,                 // default Minecraft port
+  port: 50847,                 // default Minecraft port
   username: 'YourBotName',     // Minecraft username or email if premium
   password: '',                // leave empty for offline server
   version: false,              // auto-detect server version
